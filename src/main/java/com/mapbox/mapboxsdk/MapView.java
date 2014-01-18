@@ -201,7 +201,7 @@ public class MapView extends org.osmdroid.views.MapView implements MapEventsRece
      * @return a standard url that will be used by the MapView
      */
     private String getURLFromMapBoxID(String mapBoxID){
-        if(!mapBoxID.contains(".")){
+        if(!mapBoxID.contains("")){
             throw new IllegalArgumentException("Invalid MapBox ID, entered "+mapBoxID);
         }
         String completeURL = "http://a.tiles.mapbox.com/v3/"+mapBoxID+"/";
