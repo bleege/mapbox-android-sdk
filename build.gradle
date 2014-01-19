@@ -14,39 +14,29 @@ buildscript {
 
 }
 
-apply plugin: 'android'
+apply plugin: 'android-library'
 
 dependencies {
-
     compile fileTree(dir: 'libs', include: '*.jar')
-
 }
 
 android {
 
-    compileSdkVersion 17
+    compileSdkVersion 19
 
-    buildToolsVersion "17.0.0"
-
-
-
+    buildToolsVersion "19.0.0"
 
     sourceSets {
 
         main {
 
-            manifest.srcFile 'test/AndroidManifest.xml'
+            manifest.srcFile 'src/AndroidManifest.xml'
 
-            java.srcDirs = ['test/src', 'src/src', 'src/main/java']
+            java.srcDirs = ['src/main/java']
 
-            resources.srcDirs = ['test/res', 'src/res', 'src/main/resources']
-
-            res.srcDirs = ['test/res', 'src/res', 'src/main/resources']
-
-            assets.srcDirs = ['test/assets']
+            res.srcDirs = ['src/main/res']
 
         }
 
     }
-
 }
