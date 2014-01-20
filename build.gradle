@@ -36,6 +36,8 @@ android {
 
             res.srcDirs = ['src/main/res']
 
+            resources.srcDirs = ['src/main/resources']
+
         }
 
     }
