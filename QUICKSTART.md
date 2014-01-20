@@ -4,7 +4,7 @@ This guide will take you through the process of adding a map to your Android app
 
 ###Adding the SDK to your project
 
-The quickest way is just to download the [JAR from our the GitHub repository](https://github.com/mapbox/mapbox-android-sdk/blob/master/mapbox-android-sdk.jar). If you want to build from source to use experimental features and the latest fixes, read the [README](https://github.com/mapbox/mapbox-android-sdk/blob/master/README.md) file in the repo. Once you've got the JAR, add it to the build path of your IDE.
+The quickest way is just to download the [JAR from our the GitHub repository](https://github.com/mapbox/mapbox-android-sdk/blob/master/mapbox-android-sdk.jar). If you want to build from source to use experimental features and the latest fixes, read the [README](https://github.com/mapbox/mapbox-android-sdk/blob/master/README.md) file in the repo. Once you've got the JAR, add it to the build path of your IDE.  [SLF4J](http://www.slf4j.org) is also needed.  Add it via your Gradle / Maven build file or to your Android project's libs directory.
 
 ### Required Permissions
 
