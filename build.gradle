@@ -16,15 +16,15 @@ buildscript {
 
 apply plugin: 'android-library'
 
-dependencies {
-    compile fileTree(dir: 'libs', include: '*.jar')
-}
-
 android {
 
     compileSdkVersion 19
-
     buildToolsVersion "19.0.0"
+
+    defaultConfig {
+        minSdkVersion 4
+        targetSdkVersion 16
+    }
 
     sourceSets {
 
@@ -42,3 +42,9 @@ android {
 
     }
 }
+
+dependencies {
+    compile 'org.slf4j:slf4j-simple:1.7.5'
+    compile fileTree(dir: 'libs', include: '*.jar')
+}
+
