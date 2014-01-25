@@ -43,6 +43,10 @@ android {
     }
 }
 
+repositories {
+    mavenCentral()
+}
+
 dependencies {
     compile 'org.slf4j:slf4j-simple:1.7.5'
     compile fileTree(dir: 'libs', include: '*.jar')
