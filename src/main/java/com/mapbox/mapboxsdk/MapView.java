@@ -9,6 +9,8 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
+import com.testflightapp.lib.core.Logger;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.osmdroid.DefaultResourceProxyImpl;
@@ -22,17 +24,12 @@ import org.osmdroid.tileprovider.tilesource.ITileSource;
 import org.osmdroid.tileprovider.tilesource.XYTileSource;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapController;
-import org.osmdroid.views.overlay.ItemizedIconOverlay;
-import org.osmdroid.views.overlay.ItemizedOverlay;
-import org.osmdroid.views.overlay.OverlayItem;
-import org.osmdroid.views.overlay.TilesOverlay;
+import org.osmdroid.views.overlay.*;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -131,6 +128,7 @@ public class MapView extends org.osmdroid.views.MapView implements MapEventsRece
     public void removeLayer(String identifier){
 
     }
+
     @Deprecated
     public void addLayer(String name){
         this.switchToLayer(name);
@@ -149,8 +147,12 @@ public class MapView extends org.osmdroid.views.MapView implements MapEventsRece
         tilesOverlay.setLoadingBackgroundColor(Color.TRANSPARENT);
         this.getOverlays().clear();
         this.getOverlays().add(tilesOverlay);
-        this.getController().animateTo(this.getMapCenter()); // This clears tiles (for some reason)
         this.invalidate();
+    }
+
+    @Override
+    public void setMultiTouchControls(boolean yesOrNo){
+        super.setMultiTouchControls(yesOrNo);
     }
 
 
@@ -167,7 +169,7 @@ public class MapView extends org.osmdroid.views.MapView implements MapEventsRece
      **/
     private String parseURL(String url) {
         if(url.contains(".json")) return getURLFromTileJSON(url);
-        if(!url.contains("http://")) return getURLFromMapBoxID(url);
+        if(!url.contains("http://") && !url.contains("https://")) return getURLFromMapBoxID(url);
         if(url.contains(".png")) return getURLFromImageTemplate(url);
         else{
             throw new IllegalArgumentException("You need to enter either a valid URL, a MapBox id, or a tile URL template");
@@ -204,7 +206,7 @@ public class MapView extends org.osmdroid.views.MapView implements MapEventsRece
         if(!mapBoxID.contains("")){
             throw new IllegalArgumentException("Invalid MapBox ID, entered "+mapBoxID);
         }
-        String completeURL = "http://a.tiles.mapbox.com/v3/"+mapBoxID+"/";
+        String completeURL = "https://a.tiles.mapbox.com/v3/"+mapBoxID+"/";
         return completeURL;
     }
 
@@ -267,43 +269,91 @@ public class MapView extends org.osmdroid.views.MapView implements MapEventsRece
 
     }
 
+    public void parseFromGeoJSON(String URL) {
+        new JSONBodyGetter().execute(URL);
+    }
+
     /**
      * Class that generates markers from formats such as GeoJSON
      */
-    public class MarkerFactory {
-        public ItemizedOverlay<Marker> fromGeoJSON(String URL){
-            GeoJSONElement geoJSONElement = new GeoJSONElement(URL);
-            return geoJSONElement.getMarkersOverlay();
+    @TargetApi(Build.VERSION_CODES.CUPCAKE)
+    public class JSONBodyGetter extends AsyncTask<String, Void, String> {
+        @Override
+        protected String doInBackground(String... params) {
+            InputStream is = null;
+            String jsonText = null;
+            try {
+                is = new URL(params[0]).openStream();
+                BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
+
+                jsonText = readAll(rd);
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return jsonText;
         }
-        @TargetApi(Build.VERSION_CODES.CUPCAKE)
-        private class JSONBodyGetter extends AsyncTask<String, Void, JSONObject> {
-            @Override
-            protected JSONObject doInBackground(String... params) {
-                try {
-                    URL url = new URL(params[0]);
-                    HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                    connection.setDoInput(true);
-                    connection.connect();
-                    InputStream input = connection.getInputStream();
-                    BufferedReader streamReader = new BufferedReader(new InputStreamReader(input, "UTF-8"));
-                    StringBuilder responseStrBuilder = new StringBuilder();
-                    String inputStr;
-                    while ((inputStr = streamReader.readLine()) != null)
-                        responseStrBuilder.append(inputStr);
-                    return new JSONObject(responseStrBuilder.toString());
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    return null;
-                } catch (JSONException e) {
-                    e.printStackTrace();
+
+        @Override
+        protected void onPostExecute(String jsonString) {
+            try {
+                parseGeoJSON(jsonString);
+            } catch (JSONException e) {
+                Logger.w("JSON parsed was invalid. Continuing without it");
+                return;
+            }
+        }
+
+        private String readAll(Reader rd) throws IOException {
+            StringBuilder sb = new StringBuilder();
+            int cp;
+            while ((cp = rd.read()) != -1) {
+                sb.append((char) cp);
+            }
+            return sb.toString();
+        }
+
+        private void parseGeoJSON(String jsonString) throws JSONException {
+            JSONObject json = new JSONObject(jsonString);
+            JSONArray features = (JSONArray)json.get("features");
+            for(int i = 0; i< (features != null ? features.length() : 0); i++){
+                JSONObject feature = (JSONObject) features.get(i);
+                JSONObject properties = (JSONObject) feature.get("properties");
+                String title = "";
+                if(properties.has("title")){
+                    title = properties.getString("title");
                 }
-                return null;
+                JSONObject geometry = null;
+                try{
+                    geometry = (JSONObject) feature.get("geometry");
+                }
+                catch (JSONException e){
+                    Logger.w("No geometry is specified in feature"+ title);
+                    continue;
+                }
+                String type = geometry.getString("type");
+                if(type.equals("Point")){
+                    JSONArray coordinates = (JSONArray) geometry.get("coordinates");
+                    double lon = (Double)coordinates.get(0);
+                    double lat = (Double)coordinates.get(1);
+                    MapView.this.addMarker(lat, lon, title, "");
+                }
+                else if (type.equals("LineString")){
+                    PathOverlay path = new PathOverlay(Color.BLACK,context);
+                    JSONArray points = (JSONArray) geometry.get("coordinates");
+                    JSONArray coordinates;
+                    for(int point=0; point<points.length(); point++){
+                        coordinates = (JSONArray) points.get(point);
+                        double lon = (Double)coordinates.get(0);
+                        double lat = (Double)coordinates.get(1);
+                        path.addPoint(new GeoPoint(lat, lon));
+                    }
+                    MapView.this.getOverlays().add(path);
+                }
+
+
             }
 
-            @Override
-            protected void onPostExecute(JSONObject jsonObject) {
-
-            }
         }
     }
 

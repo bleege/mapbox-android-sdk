@@ -37,11 +37,10 @@ public class MainActivity extends Activity {
         TestFlight.takeOff(getApplication(), "b1425515-299c-4aaf-b85e-b9a7c99b0fa5");
         setContentView(R.layout.activity_main);
         mv = (MapView)findViewById(R.id.mapview);
-        //mv.setURL(terrain);
         mapController = mv.getController();
         mapController.setCenter(startingPoint);
         mapController.setZoom(4);
-
+        mv.parseFromGeoJSON("https://gist.github.com/fdansv/8541618/raw/09da8aef983c8ffeb814d0a1baa8ecf563555b5d/geojsonpointtest");
         setButtonListeners();
 
     }

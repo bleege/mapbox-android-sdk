@@ -75,7 +75,6 @@ public class MapTileDownloader extends MapTileModuleProviderBase {
         mFilesystemCache = pFilesystemCache;
         mNetworkAvailablityCheck = pNetworkAvailablityCheck;
         setTileSource(pTileSource);
-        System.out.println("Map downloader created");
     }
 
     // ===========================================================
@@ -174,6 +173,10 @@ public class MapTileDownloader extends MapTileModuleProviderBase {
                 String tileURLString = tileSource.getTileURLString(tile);
                 if(MapTileDownloader.this.isHighDensity() && isMapBox(tileURLString)){
                     tileURLString = tileURLString.replace(".png","@2x.png");
+
+                }
+                if(isMapBox(tileURLString) && tileURLString.contains("https://")){
+                    tileURLString = tileURLString.replace(".png", ".png?secure");
                 }
                 if (DEBUGMODE) {
                     logger.debug("Downloading Maptile from url: " + tileURLString);
