@@ -1,7 +1,11 @@
 package com.mapbox.mapboxsdk;
 
 import android.content.Context;
-import android.graphics.*;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.Point;
+import android.graphics.Rect;
+import android.graphics.Color;
 import android.text.Layout;
 import android.text.StaticLayout;
 import android.text.TextPaint;
@@ -9,7 +13,7 @@ import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.overlay.Overlay;
 import org.osmdroid.views.overlay.OverlayItem;
 
-public class Tooltip extends Overlay{
+public class Tooltip extends Overlay {
 
     private OverlayItem item;
     private Paint paint = new Paint();
@@ -18,23 +22,35 @@ public class Tooltip extends Overlay{
     private MapView mapView;
     private Canvas canvas;
 
+    /**
+     * Is this tooltip currently visible.
+     */
     private boolean visible;
+
+    /**
+     * A paint style used for tooltip contents.
+     */
     private TextPaint textPaint;
 
     public Tooltip(Context ctx) {
         this(ctx, null);
     }
 
-    public Tooltip(Context ctx, OverlayItem ot){
+    /**
+     * Initialize a tooltip without text
+     * @param ctx
+     * @param ot
+     */
+    public Tooltip(Context ctx, OverlayItem ot) {
         this(ctx, ot, "");
     }
 
     /**
-     * Initialize a tooltip
+     * Initialize a tooltip.
      *
-     * @param ctx
-     * @param ot
-     * @param text
+     * @param ctx a Context object on which this tooltip is drawn.
+     * @param ot an overlay item.
+     * @param text the text in the tooltip.
      */
     public Tooltip(Context ctx, OverlayItem ot, String text) {
         super(ctx);
@@ -47,13 +63,14 @@ public class Tooltip extends Overlay{
         textPaint = new TextPaint();
         textPaint.setColor(Color.rgb(50, 50, 50));
         textPaint.setTextAlign(Paint.Align.CENTER);
-        textPaint.setTextSize(40f);
+        textPaint.setTextSize(DEFAULT_TEXT_SIZE);
     }
 
     @Override
     protected void draw(Canvas canvas, org.osmdroid.views.MapView mapView, boolean shadow) {
-        if(this.isVisible()){
-            StaticLayout sl = new StaticLayout(text, textPaint, 400, Layout.Alignment.ALIGN_CENTER, 1, 1, false);
+        if (this.isVisible()) {
+            StaticLayout sl = new StaticLayout(text, textPaint,
+                    400, Layout.Alignment.ALIGN_CENTER, 1, 1, false);
             sl.draw(canvas);
             this.mapView = (MapView)mapView;
             this.calculatePoint();
@@ -62,35 +79,45 @@ public class Tooltip extends Overlay{
             this.setTooltipShape();
         }
     }
-    private void setTooltipShape(){
+
+    private void setTooltipShape() {
         canvas.drawRect(getRect(), paint);
         canvas.save();
         canvas.rotate((float) 45, point.x, point.y - 100);
-        canvas.drawRect(point.x - 20, point.y - 120, point.x + 20, point.y - 80, paint);
+        canvas.drawRect(point.x - 20,
+                point.y - 120,
+                point.x + 20,
+                point.y - 80,
+                paint);
         canvas.restore();
     }
-    private void calculatePoint(){
+
+    private void calculatePoint() {
         GeoPoint markerCoords = item.getPoint();
         MapView.Projection projection = mapView.getProjection();
         projection.toPixels(markerCoords, point);
     }
-
 
     // Getters/setters
 
     /**
      * Sets text to be displayed in the tooltip
      * @param text the text
+     * @return Tooltip the tooltip, for chaining.
      */
-    public void setText(String text){
-        this.text = text;
+    public Tooltip setText(String text) {
+       this.text = text;
+        return this;
     }
+
     /**
      * Sets associated overlay of the tooltip
      * @param item the overlay (normally a Marker object)
+     * @return Tooltip the tooltip, for chaining.
      */
-    public void setItem(OverlayItem item) {
+    public Tooltip setItem(OverlayItem item) {
         this.item = item;
+        return this;
     }
 
     /**
@@ -104,14 +131,30 @@ public class Tooltip extends Overlay{
     /**
      * Sets visibility of the tooltip
      * @param visible whether it's visible or not
+     * @return Tooltip the tooltip, for chaining.
      */
-    public void setVisible(boolean visible) {
+    public Tooltip setVisible(boolean visible) {
         this.visible = visible;
+        return this;
     }
 
+    /**
+     * Get the on-screen drawn area of this tooltip.
+     * @return the on-screen dimensions of this tooltip as a Rect
+     */
     public Rect getRect() {
-        return new Rect(point.x - TOOLTIP_WIDTH/2, point.y - 200, point.x + TOOLTIP_WIDTH/2, point.y - 100);
+        return new Rect(point.x - TOOLTIP_WIDTH / 2,
+                point.y - 200,
+                point.x + TOOLTIP_WIDTH / 2,
+                point.y - 100);
     }
 
+    /**
+     * The default tooltip width, in pixels.
+     */
     public static final int TOOLTIP_WIDTH = 480;
+    /**
+     * Default text size, in points.
+     */
+    public static final float DEFAULT_TEXT_SIZE = 40f;
 }

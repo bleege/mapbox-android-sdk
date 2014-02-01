@@ -42,7 +42,6 @@ public class MainActivity extends Activity {
         mapController.setZoom(4);
         mv.parseFromGeoJSON("https://gist.github.com/fdansv/8541618/raw/09da8aef983c8ffeb814d0a1baa8ecf563555b5d/geojsonpointtest");
         setButtonListeners();
-
     }
 
     private void setButtonListeners() {
@@ -50,7 +49,7 @@ public class MainActivity extends Activity {
         satBut.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(!currentLayer.equals("satellite")){
+                if (!currentLayer.equals("satellite")) {
                     replaceMapView(satellite);
                     currentLayer = "satellite";
                 }
@@ -60,8 +59,7 @@ public class MainActivity extends Activity {
         terBut.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(!currentLayer.equals("terrain"))
-                {
+                if (!currentLayer.equals("terrain"))  {
                     replaceMapView(terrain);
                     currentLayer = "terrain";
                 }
@@ -71,7 +69,7 @@ public class MainActivity extends Activity {
         strBut.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(!currentLayer.equals("street")){
+                if (!currentLayer.equals("street")) {
                     replaceMapView(street);
                     currentLayer = "street";
                 }
@@ -79,19 +77,19 @@ public class MainActivity extends Activity {
         });
     }
 
-    protected void replaceMapView(String layer){
+    protected void replaceMapView(String layer) {
         mv.switchToLayer(layer);
 
     }
 
-    private void addLocationOverlay(){
+    private void addLocationOverlay() {
         // Adds an icon that shows location
         myLocationOverlay = new MyLocationNewOverlay(this, mv);
         myLocationOverlay.enableMyLocation();
         myLocationOverlay.setDrawAccuracyEnabled(true);
         mv.getOverlays().add(myLocationOverlay);
     }
-    private void addLine(){
+    private void addLine() {
         // Configures a line
         PathOverlay po = new PathOverlay(Color.RED, this);
         Paint linePaint = new Paint();
