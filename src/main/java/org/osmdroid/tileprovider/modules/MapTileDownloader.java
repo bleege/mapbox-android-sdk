@@ -13,11 +13,15 @@ import org.osmdroid.tileprovider.tilesource.BitmapTileSourceBase.LowMemoryExcept
 import org.osmdroid.tileprovider.tilesource.ITileSource;
 import org.osmdroid.tileprovider.tilesource.OnlineTileSourceBase;
 import org.osmdroid.tileprovider.util.StreamUtils;
+import org.osmdroid.views.MapView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -45,25 +49,32 @@ public class MapTileDownloader extends MapTileModuleProviderBase {
     private final AtomicReference<OnlineTileSourceBase> mTileSource = new AtomicReference<OnlineTileSourceBase>();
 
     private final INetworkAvailablityCheck mNetworkAvailablityCheck;
+    private org.osmdroid.views.MapView mapView;
     private boolean highDensity = false;
+
+    private int threadCount = 0;
+    ArrayList<Boolean> threadControl = new ArrayList<Boolean>();
 
     // ===========================================================
     // Constructors
     // ===========================================================
 
     public MapTileDownloader(final ITileSource pTileSource) {
-        this(pTileSource, null, null);
+        this(pTileSource, null);
     }
 
     public MapTileDownloader(final ITileSource pTileSource, final IFilesystemCache pFilesystemCache) {
-        this(pTileSource, pFilesystemCache, null);
+        this(pTileSource, pFilesystemCache, null, null);
     }
 
     public MapTileDownloader(final ITileSource pTileSource,
                              final IFilesystemCache pFilesystemCache,
-                             final INetworkAvailablityCheck pNetworkAvailablityCheck) {
+                             final INetworkAvailablityCheck pNetworkAvailablityCheck,
+                             final org.osmdroid.views.MapView mapView) {
         this(pTileSource, pFilesystemCache, pNetworkAvailablityCheck,
                 NUMBER_OF_TILE_DOWNLOAD_THREADS, TILE_DOWNLOAD_MAXIMUM_QUEUE_SIZE);
+        System.out.println(mapView);
+        this.mapView = mapView;
     }
 
     public MapTileDownloader(final ITileSource pTileSource,
@@ -76,6 +87,7 @@ public class MapTileDownloader extends MapTileModuleProviderBase {
         mNetworkAvailablityCheck = pNetworkAvailablityCheck;
         setTileSource(pTileSource);
     }
+
 
     // ===========================================================
     // Getter & Setter
@@ -150,7 +162,9 @@ public class MapTileDownloader extends MapTileModuleProviderBase {
 
         @Override
         public Drawable loadTile(final MapTileRequestState aState) throws CantContinueException {
-
+            threadControl.add(false);
+            int threadIndex = threadControl.size()-1;
+            System.out.println(threadIndex+" set");
             OnlineTileSourceBase tileSource = mTileSource.get();
             if (tileSource == null) {
                 return null;
@@ -224,6 +238,13 @@ public class MapTileDownloader extends MapTileModuleProviderBase {
                     byteStream.reset();
                 }
                 final Drawable result = tileSource.getDrawable(byteStream);
+                threadControl.set(threadIndex, true);
+                if(checkThreadControl()) {
+                    MapView.TilesLoadedListener listener = mapView.getTilesLoadedListener();
+                    if (listener != null){
+                        listener.onTilesLoaded();
+                    }
+                }
                 return result;
             } catch (final UnknownHostException e) {
                 // no network connection so empty the queue
@@ -274,5 +295,12 @@ public class MapTileDownloader extends MapTileModuleProviderBase {
             if (pDrawable instanceof ReusableBitmapDrawable)
                 BitmapPool.getInstance().returnDrawableToPool((ReusableBitmapDrawable) pDrawable);
         }
+    }
+    private boolean checkThreadControl(){
+        for(boolean done: threadControl){
+            if(!done) return false;
+        }
+        threadControl = new ArrayList<Boolean>();
+        return true;
     }
 }

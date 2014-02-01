@@ -10,6 +10,7 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
+import com.mapbox.mapboxsdk.constants.MapboxConstants;
 import com.testflightapp.lib.core.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -40,7 +41,7 @@ import java.util.List;
  * and interaction code.
  */
 public class MapView extends org.osmdroid.views.MapView
-        implements MapEventsReceiver {
+        implements MapboxConstants, MapEventsReceiver {
     ////////////
     // FIELDS //
     ////////////
@@ -89,9 +90,11 @@ public class MapView extends org.osmdroid.views.MapView
         eventsOverlay = new MapEventsOverlay(context, this);
         this.getOverlays().add(eventsOverlay);
         this.setMultiTouchControls(true);
-        final String mapboxID = attrs.getAttributeValue(null, "mapboxID");
-        if (mapboxID != null) {
-            setURL(mapboxID);
+        if (attrs!=null){
+            final String mapboxID = attrs.getAttributeValue(null, "mapboxID");
+            if (mapboxID != null) {
+                setURL(mapboxID);
+            }
         }
     }
 
@@ -204,7 +207,7 @@ public class MapView extends org.osmdroid.views.MapView
         if (!mapBoxID.contains(".")) {
             throw new IllegalArgumentException("Invalid MapBox ID, entered " + mapBoxID);
         }
-        String completeURL = "https://a.tiles.mapbox.com/v3/" + mapBoxID + "/";
+        String completeURL = MAPBOX_BASE_URL + mapBoxID + "/";
         return completeURL;
     }
 
@@ -236,16 +239,11 @@ public class MapView extends org.osmdroid.views.MapView
 
     /**
      * Adds a marker to the default marker overlay
-     * @param lat latitude of the marker
-     * @param lon longitude of the marker
-     * @param title title of the marker
-     * @param text body of the marker's tooltip
+     * @param marker the marker object to be added
      * @return the marker object
      */
 
-    public Marker addMarker(final double lat, final double lon,
-                            final String title, final String text) {
-        Marker marker = new Marker(this, title, text, new GeoPoint(lat, lon));
+    public Marker addMarker(Marker marker) {
         if (firstMarker) {
             defaultMarkerList.add(marker);
             setDefaultItemizedOverlay();
@@ -254,7 +252,15 @@ public class MapView extends org.osmdroid.views.MapView
         }
         this.invalidate();
         firstMarker = false;
-        return null;
+        return marker;
+    }
+
+    // TODO: remove
+    public Marker createMarker(final double lat, final double lon,
+                            final String title, final String text) {
+        Marker marker = new Marker(this, title, text, new GeoPoint(lat, lon));
+        addMarker(marker);
+        return marker;
     }
 
     /**
@@ -267,12 +273,30 @@ public class MapView extends org.osmdroid.views.MapView
     }
 
     /**
-     * Load and parse a GeoJSON file at a given URL
+     * Load and parse a GeoJSON file at a given URL. Deprecated method. Use {@link #loadFromGeoJSONURL(String)} or {@link #loadFromGeoJSONString(String)}
      * @param URL the URL from which to load the GeoJSON file
      */
+    @Deprecated
     public void parseFromGeoJSON(String URL) {
         new JSONBodyGetter().execute(URL);
     }
+
+    /**
+     * Load and parse a GeoJSON file at a given URL
+     * @param URL the URL from which to load the GeoJSON file
+     */
+    public void loadFromGeoJSONURL(String URL) {
+        new JSONBodyGetter().execute(URL);
+    }
+
+    /**
+     * Load and parse a GeoJSON file at a given URL
+     * @param geoJSON the GeoJSON string to parse
+     */
+    public void loadFromGeoJSONString(String geoJSON) throws JSONException {
+        new JSONBodyGetter().parseGeoJSON(geoJSON);
+    }
+
 
     /**
      * Class that generates markers from formats such as GeoJSON
@@ -316,85 +340,8 @@ public class MapView extends org.osmdroid.views.MapView
         }
 
         private void parseGeoJSON(String jsonString) throws JSONException {
-            JSONObject json = new JSONObject(jsonString);
-
-            if (!json.has("features")) return;
-
-            JSONArray features = (JSONArray) json.get("features");
-
-            for (int i = 0; i < features.length(); i++) {
-
-                JSONObject feature = (JSONObject) features.get(i);
-                JSONObject properties = (JSONObject) feature.get("properties");
-                String title = "";
-
-                if (properties.has("title")) {
-                    title = properties.getString("title");
-                }
-
-                if (!feature.has("geometry")) {
-                    Logger.w("No geometry is specified in feature" + title);
-                    continue;
-                }
-
-                JSONObject geometry = (JSONObject) feature.get("geometry");
-                String type = geometry.getString("type");
-                Logger.w("Feature has type: " + type);
-
-                int j;
-                if (type.equals("Point")) {
-                    JSONArray coordinates = (JSONArray) geometry.get("coordinates");
-                    double lon = (Double) coordinates.get(0);
-                    double lat = (Double) coordinates.get(1);
-                    MapView.this.addMarker(lat, lon, title, "");
-                } else if (type.equals("MultiPoint")) {
-                    JSONArray points = (JSONArray) geometry.get("coordinates");
-                    for (j = 0; j < points.length(); j++) {
-                        JSONArray coordinates = (JSONArray) points.get(j);
-                        double lon = (Double) coordinates.get(0);
-                        double lat = (Double) coordinates.get(1);
-                        MapView.this.addMarker(lat, lon, title, "");
-                    }
-                } else if (type.equals("LineString")) {
-                    PathOverlay path = new PathOverlay(Color.BLACK, context);
-                    JSONArray points = (JSONArray) geometry.get("coordinates");
-                    JSONArray coordinates;
-                    for (j = 0; j < points.length(); j++) {
-                        coordinates = (JSONArray) points.get(j);
-                        double lon = (Double) coordinates.get(0);
-                        double lat = (Double) coordinates.get(1);
-                        path.addPoint(new GeoPoint(lat, lon));
-                    }
-                    MapView.this.getOverlays().add(path);
-                } else if (type.equals("MultiLineString")) {
-                    JSONArray lines = (JSONArray) geometry.get("coordinates");
-                    for (int k = 0; k < lines.length(); k++) {
-                        PathOverlay path = new PathOverlay(Color.BLACK, context);
-                        JSONArray points = (JSONArray) lines.get(k);
-                        JSONArray coordinates;
-                        for (j = 0; j < points.length(); j++) {
-                            coordinates = (JSONArray) points.get(j);
-                            double lon = (Double) coordinates.get(0);
-                            double lat = (Double) coordinates.get(1);
-                            path.addPoint(new GeoPoint(lat, lon));
-                        }
-                        MapView.this.getOverlays().add(path);
-                    }
-                } else if (type.equals("Polygon")) {
-                    PathOverlay path = new PathOverlay(Color.BLACK, context);
-                    path.getPaint().setStyle(Paint.Style.FILL);
-                    JSONArray points = (JSONArray) geometry.get("coordinates");
-                    JSONArray outerRing = (JSONArray) points.get(0);
-                    JSONArray coordinates;
-                    for (j = 0; j < outerRing.length(); j++) {
-                        coordinates = (JSONArray) outerRing.get(j);
-                        double lon = (Double) coordinates.get(0);
-                        double lat = (Double) coordinates.get(1);
-                        path.addPoint(new GeoPoint(lat, lon));
-                    }
-                    MapView.this.getOverlays().add(path);
-                }
-            }
+            Logger.w("MAPBOX parsing from string");
+            GeoJSON.parseString(jsonString, MapView.this);
         }
     }
 
@@ -451,4 +398,8 @@ public class MapView extends org.osmdroid.views.MapView
     }
     public void onTap(IGeoPoint p) {
     }
+
+
+
+
 }
