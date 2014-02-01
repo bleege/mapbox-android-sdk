@@ -1,21 +1,21 @@
 package com.mapbox.mapboxsdk;
 
 import android.content.Context;
+import android.graphics.drawable.Drawable;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.overlay.OverlayItem;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A Marker object is a visible representation of a point on a Map that has a geographical place.
  */
 public class Marker extends OverlayItem {
+    private static Logger logger = LoggerFactory.getLogger(Marker.class);
     private Context context;
     private Tooltip tooltip;
     private MapView mapView;
+    private MapBoxResourceProxyImpl mResourceProxy;
 
     /**
      * Initialize a new marker object
@@ -39,6 +39,7 @@ public class Marker extends OverlayItem {
         super(aTitle, aDescription, aGeoPoint);
         context = mv.getContext();
         mapView = mv;
+        mResourceProxy = new MapBoxResourceProxyImpl(context);
         fromMaki("markerstroked");
         attachTooltip();
     }
@@ -55,9 +56,17 @@ public class Marker extends OverlayItem {
      * @param makiString the name of a Maki icon symbol
      */
     public void fromMaki(String makiString) {
+        String urlString = "/com/mapbox/" + makiString+"182x";
+        logger.info("urlString = '" + urlString + "'");
+        Drawable drawable = mResourceProxy.getMapBoxDrawable(urlString);
+        logger.info("drawable = '" + drawable + "'");
+        this.setMarker(drawable);
+
+/*
         String urlString = makiString+"182x";
         int id = context.getResources().getIdentifier(urlString, "drawable", context.getPackageName());
         this.setMarker(context.getResources().getDrawable(id));
+*/
     }
 
     public Marker setIcon(Icon icon) {
