@@ -2,19 +2,13 @@ package com.mapbox.mapboxsdk;
 
 import android.annotation.TargetApi;
 import android.content.Context;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
-import android.graphics.Color;
-import android.graphics.Paint;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.util.AttributeSet;
-import android.util.DisplayMetrics;
 import com.mapbox.mapboxsdk.constants.MapboxConstants;
+import com.mapbox.mapboxsdk.dimensions.Size;
 import com.testflightapp.lib.core.Logger;
-import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 import org.osmdroid.DefaultResourceProxyImpl;
 import org.osmdroid.ResourceProxy;
 import org.osmdroid.api.IGeoPoint;
@@ -25,15 +19,11 @@ import org.osmdroid.tileprovider.MapTileProviderBasic;
 import org.osmdroid.tileprovider.tilesource.ITileSource;
 import org.osmdroid.tileprovider.tilesource.XYTileSource;
 import org.osmdroid.util.GeoPoint;
-import org.osmdroid.views.MapController;
 import org.osmdroid.views.overlay.*;
-
 import java.io.*;
-import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  * The MapView class manages all of the content and
@@ -74,6 +64,13 @@ public class MapView extends org.osmdroid.views.MapView
     public final static String EXAMPLE_MAP_ID = "examples.map-z2effxa8";
     public final static int DEFAULT_TILE_SIZE = 256;
 
+	private boolean clusteringEnabled = false;
+	private boolean positionClusterMarkersAtTheGravityCenter = true;
+	private boolean orderClusterMarkersAboveOthers = false;
+
+	private Size clusterMarkerSize;
+	private Size clusterAreaSize;
+
     //////////////////
     // CONSTRUCTORS //
     //////////////////
@@ -96,6 +93,8 @@ public class MapView extends org.osmdroid.views.MapView
                 setURL(mapboxID);
             }
         }
+		clusterMarkerSize = new Size(100.0, 100.0);
+		clusterAreaSize = new Size(150.0, 150.0);
     }
 
     /**
@@ -118,11 +117,100 @@ public class MapView extends org.osmdroid.views.MapView
     ////////////////////
 
 
-    /**
+	/**
+	 * Status of clustering support.  Defaults to 'false'.
+	 * @return True if enabled, False if disabled
+	 */
+	public boolean isClusteringEnabled()
+	{
+		return clusteringEnabled;
+	}
+
+	/**
+	 * Enable clustering
+	 * @param clusteringEnabled True to enable, False to disable
+	 */
+	public void setClusteringEnabled(boolean clusteringEnabled)
+	{
+		this.clusteringEnabled = clusteringEnabled;
+	}
+
+	/**
+	 * Whether to order markers on the z-axis according to increasing y-position. Defaults to 'true'.
+	 * @return True if should order markers on z-axis according to increasing y-position, False if not.
+	 */
+	public boolean isPositionClusterMarkersAtTheGravityCenter()
+	{
+		return positionClusterMarkersAtTheGravityCenter;
+	}
+
+	/**
+	 * Whether to order markers on the z-axis according to increasing y-position.
+	 * @param positionClusterMarkersAtTheGravityCenter True if should order markers on z-axis according to increasing y-position, False if not.
+	 */
+	public void setPositionClusterMarkersAtTheGravityCenter(boolean positionClusterMarkersAtTheGravityCenter)
+	{
+		this.positionClusterMarkersAtTheGravityCenter = positionClusterMarkersAtTheGravityCenter;
+	}
+
+	/**
+	 * Whether to order cluster markers above non-clustered markers. Defaults to 'false'.
+	 * @return True if cluster markers ordered above non-clustered markers, False if not.
+	 */
+	public boolean isOrderClusterMarkersAboveOthers()
+	{
+		return orderClusterMarkersAboveOthers;
+	}
+
+	/**
+	 * Whether to order cluster markers above non-clustered markers.
+	 * @param orderClusterMarkersAboveOthers True to cluster markers ordered above non-clustered markers, False if not.
+	 */
+	public void setOrderClusterMarkersAboveOthers(boolean orderClusterMarkersAboveOthers)
+	{
+		this.orderClusterMarkersAboveOthers = orderClusterMarkersAboveOthers;
+	}
+
+	/**
+	 * Size of Cluster Marker
+	 * @return Cluster Marker Size
+	 */
+	public Size getClusterMarkerSize()
+	{
+		return clusterMarkerSize;
+	}
+
+	/**
+	 * Set the size of Cluster Marker.
+	 * @param clusterMarkerSize New Size to set Cluster Marker
+	 */
+	public void setClusterMarkerSize(Size clusterMarkerSize)
+	{
+		this.clusterMarkerSize = clusterMarkerSize;
+	}
+
+	/**
+	 * Size of Cluster Area
+	 * @return Cluster Area Size
+	 */
+	public Size getClusterAreaSize()
+	{
+		return clusterAreaSize;
+	}
+
+	/**
+	 * Set the size of the Cluster Area
+	 * @param clusterAreaSize New Size to set Cluster Area
+	 */
+	public void setClusterAreaSize(Size clusterAreaSize)
+	{
+		this.clusterAreaSize = clusterAreaSize;
+	}
+
+	/**
      * Sets the MapView to use the specified URL.
      * @param URL Valid MapBox ID, URL of tileJSON file or URL of z/x/y image template
      */
-
     public void setURL(String URL) {
         if (!URL.equals("")) {
             URL = parseURL(URL);
@@ -398,8 +486,5 @@ public class MapView extends org.osmdroid.views.MapView
     }
     public void onTap(IGeoPoint p) {
     }
-
-
-
 
 }
