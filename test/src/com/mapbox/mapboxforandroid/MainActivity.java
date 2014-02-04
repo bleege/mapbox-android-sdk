@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
-import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.view.Menu;
@@ -15,7 +14,6 @@ import com.mapbox.mapboxsdk.MapView;
 import com.mapbox.mapboxsdk.Marker;
 import com.mapbox.mapboxsdk.Icon;
 import com.mapbox.mapboxsdk.util.LatLng;
-import com.testflightapp.lib.TestFlight;
 import com.mapbox.mapboxsdk.api.IMapController;
 import com.mapbox.mapboxsdk.views.overlay.PathOverlay;
 import com.mapbox.mapboxsdk.views.overlay.mylocation.MyLocationNewOverlay;
@@ -36,7 +34,6 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         this.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        TestFlight.takeOff(getApplication(), "b1425515-299c-4aaf-b85e-b9a7c99b0fa5");
         setContentView(R.layout.activity_main);
         mv = (MapView)findViewById(R.id.mapview);
         mapController = mv.getController();

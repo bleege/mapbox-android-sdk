@@ -5,9 +5,9 @@ import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.util.AttributeSet;
+import android.util.Log;
 import com.mapbox.mapboxsdk.api.ILatLng;
 import com.mapbox.mapboxsdk.constants.MapboxConstants;
-import com.testflightapp.lib.core.Logger;
 import org.json.JSONException;
 import org.osmdroid.bonuspack.overlays.MapEventsOverlay;
 import org.osmdroid.bonuspack.overlays.MapEventsReceiver;
@@ -17,7 +17,6 @@ import com.mapbox.mapboxsdk.tileprovider.tilesource.ITileSource;
 import com.mapbox.mapboxsdk.tileprovider.tilesource.XYTileSource;
 import com.mapbox.mapboxsdk.util.LatLng;
 import com.mapbox.mapboxsdk.views.overlay.*;
-
 import java.io.*;
 import java.net.URL;
 import java.nio.charset.Charset;
@@ -313,7 +312,7 @@ public class MapView extends com.mapbox.mapboxsdk.views.MapView
             try {
                 parseGeoJSON(jsonString);
             } catch (JSONException e) {
-                Logger.w("JSON parsed was invalid. Continuing without it");
+                Log.w(getClass().getCanonicalName(), "JSON parsed was invalid. Continuing without it");
                 return;
             }
         }
@@ -328,7 +327,7 @@ public class MapView extends com.mapbox.mapboxsdk.views.MapView
         }
 
         private void parseGeoJSON(String jsonString) throws JSONException {
-            Logger.w("MAPBOX parsing from string");
+            Log.w(getClass().getCanonicalName(), "MAPBOX parsing from string");
             GeoJSON.parseString(jsonString, MapView.this);
         }
     }
